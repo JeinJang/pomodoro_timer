@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -7,47 +8,17 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    return const MaterialApp(
+      title: 'Pomotimer',
+      home: MyHomePage(title: 'POMOTIMER'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -55,71 +26,298 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  final int _maxCycle = 2;
+  final int _maxRound = 4;
+  Timer _timer = Timer.periodic(const Duration(seconds: 1), (timer) {});
+  final List<int> _timerList = [15, 20, 25, 30, 35];
+  int _time = 25;
+  int _leftTime = 25 * 60;
+  bool _isRunning = false;
+  bool _isRoundOver = false;
+  int _roundCounter = 0;
+  int _cycleCounter = 0;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+  void _play() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_leftTime == 0) {
+        _incrementCycleCounter();
+      } else {
+        _leftTime--;
+      }
+      setState(() {});
     });
+  }
+
+  void _handleClickPausePlay() {
+    if (_isRunning) {
+      _timer.cancel();
+    } else {
+      _play();
+    }
+    _isRunning = !_isRunning;
+    setState(() {});
+  }
+
+  void _incrementCycleCounter() {
+    if (_cycleCounter + 1 == _maxCycle) {
+      _cycleCounter++;
+      _timer.cancel();
+      Future.delayed(const Duration(seconds: 1), () {
+        _cycleCounter = 0;
+        _roundCounter++;
+        if (_roundCounter == _maxRound) {
+          return;
+        } else {
+          _leftTime = 5 * 60;
+          _isRoundOver = true;
+          _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+            if (_leftTime == 0) {
+              _isRoundOver = false;
+              _timer.cancel();
+              _leftTime = _time * 60;
+              _play();
+            } else {
+              _leftTime--;
+            }
+            setState(() {});
+          });
+        }
+      });
+    } else {
+      _cycleCounter++;
+      _leftTime = _time * 60;
+    }
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
+      backgroundColor: Colors.deepOrange[700],
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        centerTitle: false,
+        title: Text(
+          widget.title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
         ),
+        backgroundColor: Colors.deepOrange[700],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 140,
+                height: 160,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Center(
+                  child: Text(
+                    '${_leftTime ~/ 60}'.padLeft(2, '0'),
+                    style: TextStyle(
+                      color: Colors.deepOrange[700],
+                      fontSize: 80,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -2,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(
+                width: 20,
+              ),
+              Text(
+                ':',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 80,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(
+                width: 20,
+              ),
+              Container(
+                width: 140,
+                height: 160,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Center(
+                  child: Text(
+                    '${_leftTime % 60}'.padLeft(2, '0'),
+                    style: TextStyle(
+                      color: Colors.deepOrange[700],
+                      fontSize: 80,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -2,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(
+            height: 50,
+          ),
+          ShaderMask(
+            shaderCallback: (rect) {
+              return const LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [Colors.transparent, Colors.white, Colors.transparent],
+              ).createShader(rect);
+            },
+            blendMode: BlendMode.dstIn,
+            child: SizedBox(
+              height: 50,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                scrollDirection: Axis.horizontal,
+                itemBuilder: (context, index) => TextButton(
+                  onPressed: () => {
+                    setState(() {
+                      _isRunning = false;
+                      _timer.cancel();
+                      _roundCounter = 0;
+                      _cycleCounter = 0;
+                      _time = _timerList[index];
+                      _leftTime = _timerList[index] * 60;
+                    })
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: _time == _timerList[index]
+                        ? MaterialStateProperty.all(Colors.white)
+                        : MaterialStateProperty.all(Colors.deepOrange[700]),
+                    splashFactory: NoSplash.splashFactory,
+                    shape: MaterialStateProperty.all(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                        side: const BorderSide(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  child: Text(
+                    '${_timerList[index]}',
+                    style: TextStyle(
+                      color: _time == _timerList[index]
+                          ? Colors.deepOrange[700]
+                          : Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                separatorBuilder: (context, index) => const SizedBox(width: 20),
+                itemCount: _timerList.length,
+              ),
+            ),
+          ),
+          const SizedBox(
+            height: 50,
+          ),
+          ..._isRoundOver
+              ? [
+                  const Text(
+                    'REST',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w600,
+                      height: 8 / 3,
+                    ),
+                  ),
+                ]
+              : [
+                  IconButton(
+                    onPressed: _handleClickPausePlay,
+                    color: Colors.black54,
+                    icon: Icon(
+                      _isRunning ? Icons.pause : Icons.play_arrow,
+                      size: 80,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+          const SizedBox(
+            height: 80,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 100,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '$_roundCounter/$_maxRound',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 30,
+                      ),
+                    ),
+                    const Text(
+                      'ROUND',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(
+                width: 50,
+              ),
+              SizedBox(
+                width: 100,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '$_cycleCounter/$_maxCycle',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 30,
+                      ),
+                    ),
+                    const Text(
+                      'GOAL',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
